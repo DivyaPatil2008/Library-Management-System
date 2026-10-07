@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+```
+<title>Library Management System - Login</title>
+
+<link rel="stylesheet" href="style.css">
+```
+
+</head>
+
+<body>
+
+```
+<div class="login-page">
+
+    <div class="login-box">
+
+        <!-- Logo -->
+        <div class="login-logo">
+            📚
+        </div>
+
+        <!-- Heading -->
+        <h1>Login</h1>
+
+        <p class="login-subtitle">
+            Sign in to access your library account
+        </p>
+
+        <form id="loginForm">
+
+            <!-- Username -->
+            <label for="username">
+                USERNAME / EMAIL
+            </label>
+
+            <div class="input-wrapper">
+                <span class="input-icon">◉</span>
+
+                <input
+                    type="text"
+                    id="username"
+                    placeholder="Enter your username/email"
+                    autocomplete="username"
+                >
+            </div>
+
+
+            <!-- Password -->
+            <label for="password">
+                PASSWORD
+            </label>
+
+            <div class="input-wrapper">
+
+                <span class="input-icon">●</span>
+
+                <input
+                    type="password"
+                    id="password"
+                    placeholder="Enter your password"
+                    autocomplete="current-password"
+                >
+
+                <button
+                    type="button"
+                    class="show-password"
+                    id="showPassword"
+                >
+                    Show
+                </button>
+
+            </div>
+
+
+            <!-- Login Role -->
+            <label for="role">
+                LOGIN AS
+            </label>
+
+            <select id="role">
+
+                <option value="admin">
+                    Admin
+                </option>
+
+                <option value="user">
+                    User
+                </option>
+
+            </select>
+
+
+            <!-- Remember + Forgot -->
+            <div class="login-options">
+
+                <label class="remember">
+
+                    <input
+                        type="checkbox"
+                        id="remember"
+                    >
+
+                    <span>Remember me</span>
+
+                </label>
+
+                <button
+                    type="button"
+                    class="forgot-password"
+                    id="forgotPassword"
+                >
+                    Forgot password?
+                </button>
+
+            </div>
+
+
+            <!-- Login Button -->
+            <button
+                type="submit"
+                class="login-button"
+            >
+                <span>Sign In</span>
+                <span class="login-arrow">→</span>
+            </button>
+
+
+            <!-- Error / Success Message -->
+            <p id="loginMessage"></p>
+
+        </form>
+
+
+        <!-- Create Account -->
+        <div style="text-align: center; margin-top: 18px;">
+
+            <a
+                href="create-account.html"
+                style="
+                    color: #1f6feb;
+                    text-decoration: none;
+                    font-weight: 600;
+                    font-size: 14px;
+                "
+            >
+                Don't have an account? Create Account
+            </a>
+
+        </div>
+
+
+        <!-- Secure Login -->
+        <div class="secure-login">
+
+            <div class="secure-icon">
+                ✓
+            </div>
+
+            <div>
+                <strong>Secure Login</strong>
+
+                <p>
+                    Your account information is protected.
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Dark Mode -->
+    <button
+        type="button"
+        class="dark-mode-button"
+        id="darkModeButton"
+    >
+        🌙 Dark Mode
+    </button>
+
+
+    <!-- Footer -->
+    <div class="login-footer">
+        © 2026 Library Management System
+    </div>
+
+</div>
+
+
+<script src="/script.js"></script>
+```
+
+</body>
+
+</html>

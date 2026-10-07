@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+```
+<title>Create Account - Library Management System</title>
+
+<link rel="stylesheet" href="style.css">
+```
+
+</head>
+
+<body>
+
+```
+<div class="login-page">
+
+    <div class="login-box">
+
+        <!-- Logo -->
+        <div class="login-logo">
+            📚
+        </div>
+
+        <!-- Heading -->
+        <h1>Create Account</h1>
+
+        <p class="login-subtitle">
+            Create your library account
+        </p>
+
+        <form id="createAccountForm">
+
+            <!-- Name -->
+            <label for="accountName">
+                USERNAME
+            </label>
+
+            <div class="input-wrapper">
+
+                <span class="input-icon">◉</span>
+
+                <input
+                    type="text"
+                    id="accountName"
+                    placeholder="Enter your username"
+                    autocomplete="username"
+                    required
+                >
+
+            </div>
+
+            <!-- Password -->
+            <label for="accountPassword">
+                PASSWORD
+            </label>
+
+            <div class="input-wrapper">
+
+                <span class="input-icon">●</span>
+
+                <input
+                    type="password"
+                    id="accountPassword"
+                    placeholder="Create a password"
+                    autocomplete="new-password"
+                    required
+                >
+
+                <button
+                    type="button"
+                    class="show-password"
+                    id="showAccountPassword"
+                >
+                    Show
+                </button>
+
+            </div>
+
+            <!-- Confirm Password -->
+            <label for="confirmAccountPassword">
+                CONFIRM PASSWORD
+            </label>
+
+            <div class="input-wrapper">
+
+                <span class="input-icon">●</span>
+
+                <input
+                    type="password"
+                    id="confirmAccountPassword"
+                    placeholder="Confirm your password"
+                    autocomplete="new-password"
+                    required
+                >
+
+                <button
+                    type="button"
+                    class="show-password"
+                    id="showConfirmAccountPassword"
+                >
+                    Show
+                </button>
+
+            </div>
+
+            <!-- Account Type -->
+            <label for="accountRole">
+                ACCOUNT TYPE
+            </label>
+
+            <select id="accountRole">
+
+                <option value="USER">
+                    User
+                </option>
+
+                <option value="ADMIN">
+                    Admin
+                </option>
+
+            </select>
+
+            <!-- Create Account Button -->
+            <button
+                type="submit"
+                class="login-button"
+            >
+                <span>Create Account</span>
+                <span class="login-arrow">→</span>
+            </button>
+
+            <!-- Message -->
+            <p id="createAccountMessage"></p>
+
+        </form>
+
+        <!-- Back to Login -->
+        <div style="text-align: center; margin-top: 22px;">
+
+            <a
+                href="login.html"
+                style="
+                    color: #1f6feb;
+                    text-decoration: none;
+                    font-weight: 600;
+                    font-size: 14px;
+                "
+            >
+                ← Back to Login
+            </a>
+
+        </div>
+
+        <!-- Secure Account -->
+        <div class="secure-login">
+
+            <div class="secure-icon">
+                ✓
+            </div>
+
+            <div>
+
+                <strong>Secure Account</strong>
+
+                <p>
+                    Your account information is protected.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="login-footer">
+        © 2026 Library Management System
+    </div>
+
+</div>
+
+<script src="script.js"></script>
+```
+
+</body>
+
+</html>
+

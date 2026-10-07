@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Library Management System</title>
+
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+
+<body>
+
+
+<!-- ================= SIDEBAR ================= -->
+
+<aside class="sidebar">
+
+    <div class="logo">
+
+        <div class="logo-icon">📚</div>
+
+        <div>
+            <h2>Library</h2>
+            <span>Management System</span>
+        </div>
+
+    </div>
+
+
+    <nav class="menu">
+
+        <a href="#"
+           class="menu-item active"
+           onclick="dashboard(); return false;">
+
+            <span>🏠</span>
+            Dashboard
+
+        </a>
+
+
+        <a href="#"
+           class="menu-item"
+           onclick="viewBooks(); return false;">
+
+            <span>📚</span>
+            View Books
+
+        </a>
+
+
+        <a href="#"
+           class="menu-item"
+           onclick="addBook(); return false;">
+
+            <span>➕</span>
+            Add Book
+
+        </a>
+
+
+        <a href="#"
+           class="menu-item"
+           onclick="searchBook(); return false;">
+
+            <span>🔍</span>
+            Search Book
+
+        </a>
+
+
+        <a href="#"
+           class="menu-item"
+           onclick="issueBook(); return false;">
+
+            <span>📤</span>
+            Issue Book
+
+        </a>
+
+
+        <a href="#"
+           class="menu-item"
+           onclick="returnBook(); return false;">
+
+            <span>📥</span>
+            Return Book
+
+        </a>
+
+
+        <a href="#"
+           class="menu-item"
+           onclick="updateBook(); return false;">
+
+            <span>✏️</span>
+            Update Book
+
+        </a>
+
+
+        <a href="#"
+           class="menu-item"
+           onclick="deleteBook(); return false;">
+
+            <span>🗑️</span>
+            Delete Book
+
+        </a>
+
+    </nav>
+
+
+    <div class="sidebar-bottom">
+
+        <a href="#"
+           class="menu-item">
+
+            <span>⚙️</span>
+            Settings
+
+        </a>
+
+
+        <a href="#"
+           class="menu-item logout"
+           onclick="logout(); return false;">
+
+            <span>🚪</span>
+            Exit
+
+        </a>
+
+    </div>
+
+</aside>
+
+
+
+<!-- ================= MAIN ================= -->
+
+<main class="main-content">
+
+
+    <!-- TOP HEADER -->
+
+    <header class="top-header">
+
+        <div>
+
+            <h1>Library Management System</h1>
+
+            <p>
+                Manage your library easily and efficiently.
+            </p>
+
+        </div>
+
+
+        <div class="admin-profile">
+
+            <div class="admin-avatar"
+                 id="userAvatar">
+
+                A
+
+            </div>
+
+
+            <div>
+
+                <strong id="userName">
+                    Admin
+                </strong>
+
+                <small id="userRole">
+                    Library Administrator
+                </small>
+
+            </div>
+
+        </div>
+
+    </header>
+
+
+
+    <!-- ================= WELCOME ================= -->
+
+    <section class="welcome-card">
+
+        <div>
+
+            <p class="welcome-small">
+                WELCOME BACK 👋
+            </p>
+
+
+            <h2>
+                Good to see you,
+                <span id="welcomeName">
+                    Admin
+                </span>!
+            </h2>
+
+
+            <p id="welcomeMessage">
+
+                Keep your library organized and manage books,
+                issues and returns from one place.
+
+            </p>
+
+        </div>
+
+
+        <div class="welcome-icon">
+            📖
+        </div>
+
+    </section>
+
+
+
+    <!-- ================= STATISTICS ================= -->
+
+    <section class="stats">
+
+
+        <div class="stat-card blue">
+
+            <div class="stat-icon">
+                📚
+            </div>
+
+            <div>
+
+                <p>Total Books</p>
+
+                <h2 id="totalBooks">
+                    0
+                </h2>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="stat-card green">
+
+            <div class="stat-icon">
+                ✓
+            </div>
+
+            <div>
+
+                <p>Available Books</p>
+
+                <h2 id="availableBooks">
+                    0
+                </h2>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="stat-card red">
+
+            <div class="stat-icon">
+                📤
+            </div>
+
+            <div>
+
+                <p>Issued Books</p>
+
+                <h2 id="issuedBooks">
+                    0
+                </h2>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- ================= BOOK SECTION ================= -->
+
+    <section class="books-section">
+
+
+        <div class="section-header">
+
+            <div>
+
+                <h2>
+                    Books Collection
+                </h2>
+
+                <p>
+                    Manage all books available in the library.
+                </p>
+
+            </div>
+
+
+            <button class="add-button"
+                    onclick="addBook()">
+
+                + Add New Book
+
+            </button>
+
+        </div>
+
+
+
+        <!-- SEARCH -->
+
+        <div class="search-area">
+
+
+            <div class="search-box">
+
+                <span>🔍</span>
+
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="Search by book title, author or ID..."
+                >
+
+            </div>
+
+
+            <button class="search-button">
+                Search
+            </button>
+
+
+            <button class="reset-button">
+                Reset
+            </button>
+
+        </div>
+
+
+
+        <!-- TABLE -->
+
+        <div class="table-container">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>BOOK ID</th>
+
+                        <th>BOOK TITLE</th>
+
+                        <th>AUTHOR</th>
+
+                        <th>STATUS</th>
+
+                        <th>ACTION</th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody id="bookTable">
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+
+        <!-- FOOTER -->
+
+        <div class="table-footer">
+
+            <p>
+                Showing
+                <strong id="showingBooks">0</strong>
+                books
+            </p>
+
+
+            <div class="pagination">
+
+                <button>‹</button>
+
+                <button class="page-active">
+                    1
+                </button>
+
+                <button>2</button>
+
+                <button>3</button>
+
+                <button>›</button>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- ================= FOOTER ================= -->
+
+    <footer>
+
+        <p>
+            © 2026 Library Management System
+        </p>
+
+        <p>
+            A good book is a better friend 📖
+        </p>
+
+    </footer>
+
+
+</main>
+
+
+
+<script src="script.js"></script>
+
+</body>
+
+</html>

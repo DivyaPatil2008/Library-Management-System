@@ -229,70 +229,49 @@
 
 
 
-    <!-- ================= STATISTICS ================= -->
 
-    <section class="stats">
+    
+<!-- ================= STATISTICS ================= -->
 
+<section class="stats">
 
-        <div class="stat-card blue">
-
-            <div class="stat-icon">
-                📚
-            </div>
-
-            <div>
-
-                <p>Total Books</p>
-
-                <h2 id="totalBooks">
-                    0
-                </h2>
-
-            </div>
-
+    <div class="stat-card blue"
+         onclick="toggleBookDetails('total')"
+         onclick="toggleBookDetails('available')"
+         onclick="toggleBookDetails('issued')">
+        <div class="stat-icon">📚</div>
+        <div>
+            <p>Total Books</p>
+            <h2 id="totalBooks">0</h2>
         </div>
+    </div>
 
-
-
-        <div class="stat-card green">
-
-            <div class="stat-icon">
-                ✓
-            </div>
-
-            <div>
-
-                <p>Available Books</p>
-
-                <h2 id="availableBooks">
-                    0
-                </h2>
-
-            </div>
-
+    <div class="stat-card green"
+         onclick="toggleBookDetails('available')">
+        <div class="stat-icon">✓</div>
+        <div>
+            <p>Available Books</p>
+            <h2 id="availableBooks">0</h2>
         </div>
+    </div>
 
-
-
-        <div class="stat-card red">
-
-            <div class="stat-icon">
-                📤
-            </div>
-
-            <div>
-
-                <p>Issued Books</p>
-
-                <h2 id="issuedBooks">
-                    0
-                </h2>
-
-            </div>
-
+    <div class="stat-card red"
+         onclick="toggleBookDetails('issued')">
+        <div class="stat-icon">📤</div>
+        <div>
+            <p>Issued Books</p>
+            <h2 id="issuedBooks">0</h2>
         </div>
+    </div>
 
-    </section>
+</section>
+
+<!-- Statistics details appear here -->
+<section id="bookDetailsPanel" style="display:none;">
+    <h2 id="bookDetailsTitle">Book Details</h2>
+    <div id="bookDetailsContent"></div>
+</section>
+
 
 
 
@@ -391,6 +370,62 @@
 
         </div>
 
+        <!-- USER-WISE ISSUED BOOKS SECTION -->
+<section class="books-section" id="userIssuedBooksSection">
+
+    <div class="section-header">
+        <div>
+            <h2>Users &amp; Their Issued Books</h2>
+            <p>View every user's currently issued books.</p>
+        </div>
+
+        <button
+            type="button"
+            class="search-button"
+            onclick="loadUserIssuedBooks()">
+            Refresh
+        </button>
+    </div>
+
+    <!-- SEARCH -->
+    <div class="search-area">
+        <div class="search-box">
+            <span>🔍</span>
+
+            <input
+                type="text"
+                id="userIssuedSearch"
+                placeholder="Search user, book title, author or ID..."
+                oninput="filterUserIssuedBooks()">
+        </div>
+    </div>
+
+    <!-- USER-WISE BOOK TABLE -->
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>USER ID</th>
+                    <th>USER NAME</th>
+                    <th>BOOKS ISSUED</th>
+                    <th>BOOK ID</th>
+                    <th>BOOK TITLE</th>
+                    <th>AUTHOR</th>
+                    <th>ISSUE DATE</th>
+                    <th>DUE DATE</th>
+                </tr>
+            </thead>
+
+            <tbody id="userIssuedBooksTable">
+                <tr>
+                    <td colspan="8">Click Refresh to load records.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</section>
+
 
 
         <!-- FOOTER -->
@@ -404,21 +439,18 @@
             </p>
 
 
-            <div class="pagination">
+            <div class="pagination" id="pagination">
+    <button id="prevPage" onclick="changeBookPage(-1)">‹</button>
 
-                <button>‹</button>
+    <button class="page-active"
+            onclick="goToBookPage(1)">1</button>
 
-                <button class="page-active">
-                    1
-                </button>
+    <button onclick="goToBookPage(2)">2</button>
 
-                <button>2</button>
+    <button onclick="goToBookPage(3)">3</button>
 
-                <button>3</button>
-
-                <button>›</button>
-
-            </div>
+    <button id="nextPage" onclick="changeBookPage(1)">›</button>
+</div>
 
         </div>
 

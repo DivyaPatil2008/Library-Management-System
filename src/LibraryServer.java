@@ -1,5 +1,8 @@
 package src;
 
+import java.util.UUID;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpExchange;
 
@@ -14,6 +17,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 public class LibraryServer {
+
+
+    private static final Map<String, String> activeSessions =
+        new ConcurrentHashMap<>();
 
     public static void main(String[] args) throws IOException {
 
@@ -40,6 +47,7 @@ public class LibraryServer {
         server.createContext("/login", LibraryServer::login);
         server.createContext("/create-account", LibraryServer::createAccount);
         server.createContext("/reset-password", LibraryServer::resetPassword);
+        server.createContext( "/user-issued-books",LibraryServer::userIssuedBooks);
         server.createContext("/books", LibraryServer::books);
         server.createContext("/stats", LibraryServer::stats);
         server.createContext("/add-book", LibraryServer::addBook);
@@ -382,23 +390,46 @@ public class LibraryServer {
                 role
             );
 
-        if (result) {
+    //     if (result) {
 
-            sendResponse(
-                exchange,
-                "Login successful!",
-                200
-            );
+    //         sendResponse(
+    //             exchange,
+    //             "Login successful!",
+    //             200
+    //         );
 
-        } else {
+    //     } else {
 
-            sendResponse(
-                exchange,
-                "Invalid username, password or role.",
-                401
-            );
-        }
-    }
+    //         sendResponse(
+    //             exchange,
+    //             "Invalid username, password or role.",
+    //             401
+    //         );
+    //     }
+    // }
+    if (result) {
+    String token = UUID.randomUUID().toString();
+
+    activeSessions.put(token, username);
+
+    exchange.getResponseHeaders().add(
+        "Set-Cookie",
+        "LMSSESSION=" + token + "; Path=/; HttpOnly; SameSite=Strict"
+    );
+
+    sendResponse(
+        exchange,
+        "Login successful!",
+        200
+    );
+} else {
+    sendResponse(
+        exchange,
+        "Invalid username, password or role.",
+        401
+    );
+}
+            }
 
 
     // ================= CREATE ACCOUNT =================
@@ -806,176 +837,313 @@ public class LibraryServer {
 
     // ================= ISSUE BOOK =================
 
-    private static void issueBook(HttpExchange exchange)
-            throws IOException {
+    // private static void issueBook(HttpExchange exchange)
+    //         throws IOException {
 
-        if (!exchange.getRequestMethod()
-                .equalsIgnoreCase("POST")) {
+    //     if (!exchange.getRequestMethod()
+    //             .equalsIgnoreCase("POST")) {
 
-            sendResponse(
-                exchange,
-                "Please use POST method.",
-                405
-            );
+    //         sendResponse(
+    //             exchange,
+    //             "Please use POST method.",
+    //             405
+    //         );
 
-            return;
-        }
+    //         return;
+    //     }
 
-        Connection con = null;
+    //     Connection con = null;
 
-        try {
+    //     try {
 
-            String body = new String(
-                exchange.getRequestBody().readAllBytes(),
-                StandardCharsets.UTF_8
-            );
+    //         String body = new String(
+    //             exchange.getRequestBody().readAllBytes(),
+    //             StandardCharsets.UTF_8
+    //         );
 
-            String username =
-                getValue(body, "username");
+    //         String username =
+    //             getValue(body, "username");
 
-            String bookId =
-                getValue(body, "book_id");
+    //         String bookId =
+    //             getValue(body, "book_id");
 
-            int userId =
-                getUserId(username);
+    //         int userId =
+    //             getUserId(username);
 
-            if (userId == -1) {
+    //         if (userId == -1) {
 
-                sendResponse(
-                    exchange,
-                    "User not found.",
-                    404
-                );
+    //             sendResponse(
+    //                 exchange,
+    //                 "User not found.",
+    //                 404
+    //             );
 
-                return;
-            }
+    //             return;
+    //         }
 
-            con = DBConnection.getConnection();
+    //         con = DBConnection.getConnection();
 
-            con.setAutoCommit(false);
+    //         con.setAutoCommit(false);
 
-            String checkBook =
-                "SELECT available FROM books " +
-                "WHERE book_id = ? FOR UPDATE";
-
-
-            try (
-                PreparedStatement pst =
-                    con.prepareStatement(checkBook)
-            ) {
-
-                pst.setInt(
-                    1,
-                    Integer.parseInt(bookId)
-                );
-
-                ResultSet rs =
-                    pst.executeQuery();
-
-                if (!rs.next()) {
-
-                    con.rollback();
-
-                    sendResponse(
-                        exchange,
-                        "Book not found.",
-                        404
-                    );
-
-                    return;
-                }
-
-                if (rs.getInt("available") == 0) {
-
-                    con.rollback();
-
-                    sendResponse(
-                        exchange,
-                        "Book is already issued.",
-                        400
-                    );
-
-                    return;
-                }
-            }
+    //         String checkBook =
+    //             "SELECT available FROM books " +
+    //             "WHERE book_id = ? FOR UPDATE";
 
 
-            String insertRecord =
-                "INSERT INTO issue_records " +
-                "(book_id, user_id, issue_date, due_date, return_date, fine) " +
-                "VALUES (?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 7 DAY), NULL, 0.00)";
+    //         try (
+    //             PreparedStatement pst =
+    //                 con.prepareStatement(checkBook)
+    //         ) {
+
+    //             pst.setInt(
+    //                 1,
+    //                 Integer.parseInt(bookId)
+    //             );
+
+    //             ResultSet rs =
+    //                 pst.executeQuery();
+
+    //             if (!rs.next()) {
+
+    //                 con.rollback();
+
+    //                 sendResponse(
+    //                     exchange,
+    //                     "Book not found.",
+    //                     404
+    //                 );
+
+    //                 return;
+    //             }
+
+    //             if (rs.getInt("available") == 0) {
+
+    //                 con.rollback();
+
+    //                 sendResponse(
+    //                     exchange,
+    //                     "Book is already issued.",
+    //                     400
+    //                 );
+
+    //                 return;
+    //             }
+    //         }
 
 
-            try (
-                PreparedStatement pst =
-                    con.prepareStatement(insertRecord)
-            ) {
-
-                pst.setInt(
-                    1,
-                    Integer.parseInt(bookId)
-                );
-
-                pst.setInt(2, userId);
-
-                pst.executeUpdate();
-            }
+    //         String insertRecord =
+    //             "INSERT INTO issue_records " +
+    //             "(book_id, user_id, issue_date, due_date, return_date, fine) " +
+    //             "VALUES (?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 7 DAY), NULL, 0.00)";
 
 
-            String updateBook =
-                "UPDATE books SET available = 0 " +
-                "WHERE book_id = ?";
+    //         try (
+    //             PreparedStatement pst =
+    //                 con.prepareStatement(insertRecord)
+    //         ) {
+
+    //             pst.setInt(
+    //                 1,
+    //                 Integer.parseInt(bookId)
+    //             );
+
+    //             pst.setInt(2, userId);
+
+    //             pst.executeUpdate();
+    //         }
 
 
-            try (
-                PreparedStatement pst =
-                    con.prepareStatement(updateBook)
-            ) {
-
-                pst.setInt(
-                    1,
-                    Integer.parseInt(bookId)
-                );
-
-                pst.executeUpdate();
-            }
-
-            con.commit();
+    //         String updateBook =
+    //             "UPDATE books SET available = 0 " +
+    //             "WHERE book_id = ?";
 
 
-            sendResponse(
-                exchange,
-                "Book issued successfully!",
-                200
-            );
+    //         try (
+    //             PreparedStatement pst =
+    //                 con.prepareStatement(updateBook)
+    //         ) {
 
-        } catch (Exception e) {
+    //             pst.setInt(
+    //                 1,
+    //                 Integer.parseInt(bookId)
+    //             );
 
-            e.printStackTrace();
+    //             pst.executeUpdate();
+    //         }
 
-            try {
-                if (con != null) {
-                    con.rollback();
-                }
-            } catch (Exception ignored) {
-            }
+    //         con.commit();
 
-            sendResponse(
-                exchange,
-                "Unable to issue book.",
-                500
-            );
 
-        } finally {
+    //         sendResponse(
+    //             exchange,
+    //             "Book issued successfully!",
+    //             200
+    //         );
 
-            try {
-                if (con != null) {
-                    con.close();
-                }
-            } catch (Exception ignored) {
+    //     } catch (Exception e) {
+
+    //         e.printStackTrace();
+
+    //         try {
+    //             if (con != null) {
+    //                 con.rollback();
+    //             }
+    //         } catch (Exception ignored) {
+    //         }
+
+    //         sendResponse(
+    //             exchange,
+    //             "Unable to issue book.",
+    //             500
+    //         );
+
+    //     } finally {
+
+    //         try {
+    //             if (con != null) {
+    //                 con.close();
+    //             }
+    //         } catch (Exception ignored) {
+    //         }
+    //     }
+    // }
+
+
+        private static void issueBook(HttpExchange exchange)
+                throws IOException {
+
+    String token = null;
+
+    String cookieHeader =
+        exchange.getRequestHeaders().getFirst("Cookie");
+
+    if (cookieHeader != null) {
+        for (String cookie : cookieHeader.split(";")) {
+            String[] parts = cookie.trim().split("=", 2);
+
+            if (parts.length == 2 &&
+                parts[0].equals("LMSSESSION")) {
+                token = parts[1];
+                break;
             }
         }
     }
+
+    String username =
+        token == null ? null : activeSessions.get(token);
+
+    if (username == null) {
+        sendResponse(
+            exchange,
+            "{\"error\":\"Please login again\"}",
+            401
+        );
+        return;
+    }
+
+    try {
+        boolean admin = isAdmin(username);
+        int userId = getUserId(username);
+
+        if (userId == -1) {
+            sendResponse(exchange, "{\"error\":\"User not found\"}", 401);
+            return;
+        }
+
+        String sql =
+            "SELECT u.user_id, u.name, b.book_id, b.title, b.author, " +
+            "ir.issue_date, ir.due_date " +
+            "FROM users u " +
+            "LEFT JOIN issue_records ir ON u.user_id = ir.user_id " +
+            "AND ir.return_date IS NULL " +
+            "LEFT JOIN books b ON ir.book_id = b.book_id " +
+            "WHERE UPPER(u.role) = 'USER' ";
+
+        if (!admin) {
+            sql += "AND u.user_id = ? ";
+        }
+
+        sql += "ORDER BY u.name, u.user_id, b.book_id";
+
+        try (
+            Connection con = DBConnection.getConnection();
+            PreparedStatement ps = con.prepareStatement(sql)
+        ) {
+            if (!admin) {
+                ps.setInt(1, userId);
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                StringBuilder json = new StringBuilder("[");
+                boolean first = true;
+
+                while (rs.next()) {
+                    if (!first) json.append(",");
+                    first = false;
+
+                    json.append("{")
+                        .append("\"user_id\":")
+                        .append(rs.getInt("user_id"))
+                        .append(",\"name\":\"")
+                        .append(jsonEscape(rs.getString("name")))
+                        .append("\",\"book_id\":");
+
+                    int bookId = rs.getInt("book_id");
+
+                    if (rs.wasNull()) {
+                        json.append("null");
+                    } else {
+                        json.append(bookId);
+                    }
+
+                    json.append(",\"title\":");
+                    appendJsonString(json, rs.getString("title"));
+
+                    json.append(",\"author\":");
+                    appendJsonString(json, rs.getString("author"));
+
+                    json.append(",\"issue_date\":");
+                    appendJsonString(json, rs.getString("issue_date"));
+
+                    json.append(",\"due_date\":");
+                    appendJsonString(json, rs.getString("due_date"));
+
+                    json.append("}");
+                }
+
+                json.append("]");
+
+                exchange.getResponseHeaders().set(
+                    "Content-Type",
+                    "application/json; charset=UTF-8"
+                );
+
+                sendResponse(exchange, json.toString(), 200);
+            }
+        }
+
+    } catch (Exception e) {
+        e.printStackTrace();
+
+        sendResponse(
+            exchange,
+            "{\"error\":\"Unable to load issued books\"}",
+            500
+        );
+    }
+}
+
+private static void appendJsonString(
+        StringBuilder json, String value) {
+
+    if (value == null) {
+        json.append("null");
+    } else {
+        json.append("\"")
+            .append(jsonEscape(value))
+            .append("\"");
+    }
+}
 
 
     // ================= RETURN BOOK =================
@@ -1533,4 +1701,139 @@ public class LibraryServer {
         output.write(data);
         output.close();
     }
+    // ================= USER-WISE ISSUED BOOKS =================
+
+
+ // ================= USER-WISE ISSUED BOOKS =================
+
+private static void userIssuedBooks(HttpExchange exchange)
+        throws IOException {
+
+    if (!exchange.getRequestMethod().equalsIgnoreCase("GET")) {
+        sendResponse(exchange,
+            "{\"error\":\"Method not allowed\"}", 405);
+        return;
+    }
+
+    // Get logged-in user from session cookie
+    String username = null;
+    String cookieHeader =
+        exchange.getRequestHeaders().getFirst("Cookie");
+
+    if (cookieHeader != null) {
+        for (String cookie : cookieHeader.split(";")) {
+            String[] parts = cookie.trim().split("=", 2);
+
+            if (parts.length == 2 &&
+                    parts[0].equals("LMSSESSION")) {
+                username = activeSessions.get(parts[1]);
+                break;
+            }
+        }
+    }
+
+    if (username == null) {
+        sendResponse(exchange,
+            "{\"error\":\"Please login again\"}", 401);
+        return;
+    }
+
+    boolean admin;
+int userId;
+
+try {
+    admin = isAdmin(username);
+    userId = getUserId(username);
+} catch (Exception e) {
+    e.printStackTrace();
+    sendResponse(exchange,
+        "{\"error\":\"Unable to verify user\"}", 500);
+    return;
 }
+
+    if (!admin && userId <= 0) {
+        sendResponse(exchange,
+            "{\"error\":\"User not found\"}", 403);
+        return;
+    }
+
+    String sql =
+        "SELECT u.user_id, u.name, " +
+        "b.book_id, b.title, b.author, " +
+        "ir.issue_date, ir.due_date " +
+        "FROM users u " +
+        "LEFT JOIN issue_records ir " +
+        "ON u.user_id = ir.user_id " +
+        "AND ir.return_date IS NULL " +
+        "LEFT JOIN books b ON ir.book_id = b.book_id " +
+        "WHERE UPPER(u.role) = 'USER' " +
+        (admin ? "" : "AND u.user_id = ? ") +
+        "ORDER BY u.name, u.user_id, b.book_id";
+
+    try (Connection con = DBConnection.getConnection();
+         PreparedStatement ps = con.prepareStatement(sql)) {
+
+        if (!admin) {
+            ps.setInt(1, userId);
+        }
+
+        try (ResultSet rs = ps.executeQuery()) {
+            StringBuilder json = new StringBuilder("[");
+            boolean first = true;
+
+            while (rs.next()) {
+                if (!first) {
+                    json.append(",");
+                }
+                first = false;
+
+                json.append("{")
+                    .append("\"user_id\":")
+                    .append(rs.getInt("user_id"))
+                    .append(",\"name\":\"")
+                    .append(jsonEscape(rs.getString("name")))
+                    .append("\",\"book_id\":");
+
+                int bookId = rs.getInt("book_id");
+                if (rs.wasNull()) {
+                    json.append("null");
+                } else {
+                    json.append(bookId);
+                }
+
+                json.append(",\"title\":");
+                appendJsonString(json, rs.getString("title"));
+
+                json.append(",\"author\":");
+                appendJsonString(json, rs.getString("author"));
+
+                json.append(",\"issue_date\":");
+                appendJsonString(json, rs.getString("issue_date"));
+
+                json.append(",\"due_date\":");
+                appendJsonString(json, rs.getString("due_date"));
+
+                json.append("}");
+            }
+
+            json.append("]");
+            sendResponse(exchange, json.toString(), 200);
+        }
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        sendResponse(exchange,
+            "{\"error\":\"Unable to load user issued books\"}", 500);
+    }
+}
+
+}
+
+
+
+
+
+
+
+
+

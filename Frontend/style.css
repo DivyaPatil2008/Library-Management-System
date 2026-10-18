@@ -985,3 +985,105 @@ body.login-dark .dark-mode-button {
         display: none;
     }
 }
+
+
+/* 
+/* ================= DARK MODE ================= */
+
+body.dark-mode {
+    background-color: #121826;
+    color: #f1f5f9;
+}
+
+body.dark-mode .login-box {
+    background-color: #1e293b;
+    color: #f1f5f9;
+    border-color: #334155;
+}
+
+body.dark-mode .login-subtitle,
+body.dark-mode .secure-login p {
+    color: #cbd5e1;
+}
+
+body.dark-mode input,
+body.dark-mode select {
+    background-color: #0f172a;
+    color: #f1f5f9;
+    border-color: #475569;
+}
+
+body.dark-mode label {
+    color: #e2e8f0;
+}
+
+body.dark-mode .secure-login {
+    background-color: #263449;
+}
+
+.dark-mode-button {
+    cursor: pointer;
+    padding: 10px 16px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background-color: #ffffff;
+    color: #1e293b;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+body.dark-mode .dark-mode-button {
+    background-color: #334155;
+    color: #ffffff;
+    border-color: #475569;
+}
+
+body.dark-mode .login-footer {
+    color: #cbd5e1;
+} 
+
+/* Dark Mode Fix */
+
+body.dark-mode .login-page {
+    background-color: #121826 !important;
+    color: #f1f5f9;
+    min-height: 100vh;
+}
+
+body.dark-mode .login-box h1 {
+    color: #f1f5f9 !important;
+}
+
+body.dark-mode .login-subtitle {
+    color: #cbd5e1 !important;
+}
+
+body.dark-mode .login-footer {
+    color: #cbd5e1 !important;
+}
+
+
+/* Clickable statistics cards */
+.stat-card {
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.10);
+}
+
+/* Details panel */
+#bookDetailsPanel {
+    margin-top: 20px;
+    padding: 22px;
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.07);
+}
+
+#bookDetailsContent {
+    margin-top: 15px;
+    overflow-x: auto;
+}

@@ -147,89 +147,80 @@ function dashboard() {
 
 
 // ================= VIEW BOOKS =================
-
 async function viewBooks() {
-
     try {
+        const response = await fetch("http://localhost:8080/books");
 
-        const response =
-            await fetch(
-                "http://localhost:8080/books"
-            );
+        const books = await response.json();
 
-        if (!response.ok) {
-            throw new Error("Unable to load books");
-        }
-
-        const books =
-            await response.json();
+        console.log("Books received:", books);
 
         displayBooks(books);
-
         updateShowingCount(books.length);
-
         loadStats();
 
     } catch (error) {
-
-        console.error(error);
-
-        alert("Unable to load books.");
+        console.error("View Books error:", error);
+        alert("Unable to load books. Check Console.");
     }
 }
 
 
+
+// ================= PAGINATION =================
+
+let currentBookPage = 1;
+const booksPerPage = 5;
+let allDisplayedBooks = [];
+
 // ================= DISPLAY BOOKS =================
 
 function displayBooks(books) {
+    allDisplayedBooks = books;
 
-    const table =
-        document.getElementById("bookTable");
+    const totalPages = Math.max(
+        1,
+        Math.ceil(allDisplayedBooks.length / booksPerPage)
+    );
 
+    if (currentBookPage > totalPages) {
+        currentBookPage = totalPages;
+    }
+
+    const table = document.getElementById("bookTable");
     if (!table) return;
 
     table.innerHTML = "";
 
-    books.forEach(function(book) {
+    const startIndex = (currentBookPage - 1) * booksPerPage;
+    const pageBooks = allDisplayedBooks.slice(
+        startIndex,
+        startIndex + booksPerPage
+    );
 
-        const row =
-            document.createElement("tr");
+    pageBooks.forEach(function(book) {
+        const row = document.createElement("tr");
 
-        const status =
-            book.available == 1
-                ? "Available"
-                : "Issued";
+        const status = Number(book.available) === 1
+            ? "Available"
+            : "Issued";
 
-        const statusClass =
-            book.available == 1
-                ? "available"
-                : "issued";
+        const statusClass = Number(book.available) === 1
+            ? "available"
+            : "issued";
 
         row.innerHTML = `
-            <td>
-                ${book.book_id}
-            </td>
-
-            <td>
-                <strong>
-                    ${escapeHtml(book.title)}
-                </strong>
-            </td>
-
-            <td>
-                ${escapeHtml(book.author)}
-            </td>
-
+            <td>${book.book_id}</td>
+            <td><strong>${escapeHtml(book.title)}</strong></td>
+            <td>${escapeHtml(book.author)}</td>
             <td>
                 <span class="status ${statusClass}">
                     ${status}
                 </span>
             </td>
-
             <td>
-                <button
-                    class="action-button"
-                    onclick="bookActions(${book.book_id}, ${book.available})">
+                <button class="action-button"
+                    onclick="bookActions(${book.book_id}, ${Number(book.available)})">
                     ⋮
                 </button>
             </td>
@@ -237,7 +228,155 @@ function displayBooks(books) {
 
         table.appendChild(row);
     });
+
+    renderBookPagination(totalPages);
 }
+
+// ================= PAGE BUTTONS =================
+
+function renderBookPagination(totalPages) {
+    const container = document.getElementById("pagination");
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    function addButton(label, page, disabled = false) {
+        const button = document.createElement("button");
+        button.textContent = label;
+        button.disabled = disabled;
+
+        if (page === currentBookPage) {
+            button.classList.add("page-active");
+        }
+
+        button.addEventListener("click", function() {
+            if (page < 1 || page > totalPages) return;
+
+            currentBookPage = page;
+            displayBooks(allDisplayedBooks);
+        });
+
+        container.appendChild(button);
+    }
+
+    addButton("‹", currentBookPage - 1, currentBookPage === 1);
+
+    for (let page = 1; page <= totalPages; page++) {
+        addButton(String(page), page);
+    }
+
+    addButton("›", currentBookPage + 1,
+        currentBookPage === totalPages);
+}
+
+
+
+/* ===== CLICKABLE DASHBOARD CARDS ===== */
+
+let selectedBookCard = null;
+
+async function toggleBookDetails(type) {
+    const panel = document.getElementById("bookDetailsPanel");
+    const title = document.getElementById("bookDetailsTitle");
+    const content = document.getElementById("bookDetailsContent");
+
+    if (!panel || !title || !content) {
+        console.error("Book details panel not found in index.html");
+        return;
+    }
+
+    // Same card clicked again: hide details
+    if (selectedBookCard === type && panel.style.display !== "none") {
+        panel.style.display = "none";
+        selectedBookCard = null;
+        return;
+    }
+
+    selectedBookCard = type;
+    panel.style.display = "block";
+    title.textContent = "Loading books...";
+    content.innerHTML = "";
+
+    try {
+        const response = await fetch("http://localhost:8080/books");
+
+        if (!response.ok) {
+            throw new Error("Unable to load books");
+        }
+
+        const books = await response.json();
+        console.log("Books received:", books);
+console.log("Book table:", document.getElementById("bookTable"));
+
+displayBooks(books);
+
+        let filteredBooks = books;
+
+        if (type === "available") {
+            filteredBooks = books.filter(book => Number(book.available) === 1);
+            title.textContent = "Available Books";
+        } else if (type === "issued") {
+            filteredBooks = books.filter(book => Number(book.available) === 0);
+            title.textContent = "Issued Books";
+        } else {
+            title.textContent = "All Books";
+        }
+
+        if (filteredBooks.length === 0) {
+            content.textContent = "No books found.";
+            return;
+        }
+
+        const table = document.createElement("table");
+        table.className = "books-table";
+
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>Book ID</th>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        `;
+
+        const tbody = table.querySelector("tbody");
+
+        filteredBooks.forEach(book => {
+            const row = document.createElement("tr");
+            const status = Number(book.available) === 1
+                ? "Available"
+                : "Issued";
+
+            [book.book_id, book.title, book.author, status]
+                .forEach(value => {
+                    const cell = document.createElement("td");
+                    cell.textContent = value ?? "";
+                    row.appendChild(cell);
+                });
+
+            tbody.appendChild(row);
+        });
+
+        content.replaceChildren(table);
+
+        // Scroll to the details panel
+        panel.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest"
+        });
+
+    } catch (error) {
+        console.error(error);
+        title.textContent = "Unable to load book details";
+        content.textContent = "Please check that the Java server is running.";
+        selectedBookCard = null;
+    }
+}
+
+
 
 
 // ================= BOOK ACTIONS =================
@@ -1345,3 +1484,345 @@ if (resetPasswordForm) {
         }
     });
 }
+
+// ================= DARK MODE =================
+
+const darkModeButton = document.getElementById("darkModeButton");
+
+if (darkModeButton) {
+
+    darkModeButton.addEventListener("click", function () {
+
+        document.body.classList.toggle("dark-mode");
+
+        if (document.body.classList.contains("dark-mode")) {
+            darkModeButton.innerHTML = "☀️ Light Mode";
+        } else {
+            darkModeButton.innerHTML = "🌙 Dark Mode";
+        }
+
+    });
+
+}
+
+
+// ================= USER-WISE ISSUED BOOKS =================
+
+// let allUserIssuedBooks = [];
+
+// async function loadUserIssuedBooks() {
+//     const table = document.getElementById(
+//         "userIssuedBooksTable"
+//     );
+
+//     if (!table) return;
+
+//     table.innerHTML = `
+//         <tr>
+//             <td colspan="8">Loading records...</td>
+//         </tr>
+//     `;
+
+//     try {
+//         const response = await fetch("/user-issued-books");
+
+//         if (!response.ok) {
+//             throw new Error("Unable to load issued-book records.");
+//         }
+
+//         allUserIssuedBooks = await response.json();
+
+//         displayUserIssuedBooks(allUserIssuedBooks);
+
+//     } catch (error) {
+//         console.error(error);
+
+//         table.innerHTML = `
+//             <tr>
+//                 <td colspan="8">
+//                     Unable to load records. Check that the server is running.
+//                 </td>
+//             </tr>
+//         `;
+//     }
+// }
+
+
+// ================= USER-WISE ISSUED BOOKS =================
+
+let allUserIssuedBooks = [];
+
+function setupIssuedBooksAccess() {
+    const section = document.getElementById(
+        "userIssuedBooksSection"
+    );
+
+    if (!section) return;
+
+    // Admin sees all users; regular users see their own records.
+    section.style.display = loggedInUser ? "block" : "none";
+
+    const heading = section.querySelector("h2");
+
+    if (heading) {
+        heading.textContent = isAdmin
+            ? "Users & Their Issued Books"
+            : "My Issued Books";
+    }
+
+    if (loggedInUser) {
+        loadUserIssuedBooks();
+    }
+}
+
+async function loadUserIssuedBooks() {
+    const table = document.getElementById(
+        "userIssuedBooksTable"
+    );
+
+    if (!table) return;
+
+    table.innerHTML =
+        '<tr><td colspan="8">Loading records...</td></tr>';
+
+    try {
+        const response = await fetch("/user-issued-books", {
+            credentials: "same-origin"
+        });
+
+        if (!response.ok) {
+            throw new Error("Please login again.");
+        }
+
+        allUserIssuedBooks = await response.json();
+
+        displayUserIssuedBooks(allUserIssuedBooks);
+
+    } catch (error) {
+        console.error(error);
+
+        table.innerHTML =
+            '<tr><td colspan="8">Unable to load records. Please log in again.</td></tr>';
+    }
+}
+
+function displayUserIssuedBooks(records) {
+    const table = document.getElementById(
+        "userIssuedBooksTable"
+    );
+
+    if (!table) return;
+
+    table.innerHTML = "";
+
+    if (!records || records.length === 0) {
+        table.innerHTML =
+            '<tr><td colspan="8">No records found.</td></tr>';
+        return;
+    }
+
+    const users = new Map();
+
+    records.forEach(function (record) {
+        if (!users.has(record.user_id)) {
+            users.set(record.user_id, {
+                user_id: record.user_id,
+                name: record.name,
+                books: []
+            });
+        }
+
+        if (record.book_id !== null &&
+            record.book_id !== undefined) {
+            users.get(record.user_id).books.push(record);
+        }
+    });
+
+    users.forEach(function (user) {
+        const count = user.books.length;
+
+        if (count === 0) {
+            addIssuedBookRow(table, [
+                user.user_id,
+                user.name,
+                0,
+                "—",
+                "No books currently issued",
+                "—",
+                "—",
+                "—"
+            ]);
+            return;
+        }
+
+        user.books.forEach(function (book, index) {
+            addIssuedBookRow(table, [
+                user.user_id,
+                user.name,
+                index === 0 ? count : "",
+                book.book_id,
+                book.title,
+                book.author,
+                book.issue_date,
+                book.due_date
+            ]);
+        });
+    });
+}
+
+function addIssuedBookRow(table, values) {
+    const row = document.createElement("tr");
+
+    values.forEach(function (value) {
+        const cell = document.createElement("td");
+        cell.textContent =
+            value === null || value === undefined || value === ""
+                ? "—"
+                : String(value);
+
+        row.appendChild(cell);
+    });
+
+    table.appendChild(row);
+}
+
+function filterUserIssuedBooks() {
+    const input = document.getElementById("userIssuedSearch");
+
+    if (!input) return;
+
+    const query = input.value.trim().toLowerCase();
+
+    const filtered = allUserIssuedBooks.filter(function (record) {
+        return [
+            record.user_id,
+            record.name,
+            record.book_id,
+            record.title,
+            record.author,
+            record.issue_date,
+            record.due_date
+        ].some(function (value) {
+            return String(value ?? "")
+                .toLowerCase()
+                .includes(query);
+        });
+    });
+
+    displayUserIssuedBooks(filtered);
+}
+
+
+// ================= DISPLAY USER RECORDS =================
+
+function displayUserIssuedBooks(records) {
+    const table = document.getElementById(
+        "userIssuedBooksTable"
+    );
+
+    if (!table) return;
+
+    table.innerHTML = "";
+
+    if (!records || records.length === 0) {
+        table.innerHTML = `
+            <tr>
+                <td colspan="8">No users found.</td>
+            </tr>
+        `;
+        return;
+    }
+
+    // Group by user ID so users with the same name remain separate.
+    const users = new Map();
+
+    records.forEach(function (record) {
+        const userId = record.user_id;
+
+        if (!users.has(userId)) {
+            users.set(userId, {
+                user_id: userId,
+                name: record.name,
+                books: []
+            });
+        }
+
+        if (record.book_id !== null && record.book_id !== undefined) {
+            users.get(userId).books.push(record);
+        }
+    });
+
+    users.forEach(function (user) {
+        const count = user.books.length;
+
+        // Show a separate row for users who have no active books.
+        if (count === 0) {
+            const row = document.createElement("tr");
+
+            row.innerHTML = `
+                <td>${user.user_id}</td>
+                <td>${escapeHtml(user.name || "")}</td>
+                <td>0</td>
+                <td colspan="5">No books currently issued</td>
+            `;
+
+            table.appendChild(row);
+            return;
+        }
+
+        user.books.forEach(function (book, index) {
+            const row = document.createElement("tr");
+
+            row.innerHTML = `
+                <td>${user.user_id}</td>
+
+                <td>${escapeHtml(user.name || "")}</td>
+
+                <td>${index === 0 ? count : ""}</td>
+
+                <td>${book.book_id}</td>
+
+                <td>${escapeHtml(book.title || "")}</td>
+
+                <td>${escapeHtml(book.author || "")}</td>
+
+                <td>${escapeHtml(book.issue_date || "—")}</td>
+
+                <td>${escapeHtml(book.due_date || "—")}</td>
+            `;
+
+            table.appendChild(row);
+        });
+    });
+}
+
+
+// ================= SEARCH USER RECORDS =================
+
+function filterUserIssuedBooks() {
+    const input = document.getElementById("userIssuedSearch");
+
+    if (!input) return;
+
+    const query = input.value.trim().toLowerCase();
+
+    const filtered = allUserIssuedBooks.filter(function (record) {
+        return [
+            record.user_id,
+            record.name,
+            record.book_id,
+            record.title,
+            record.author,
+            record.issue_date,
+            record.due_date
+        ].some(function (value) {
+            return String(value ?? "")
+                .toLowerCase()
+                .includes(query);
+        });
+    });
+
+    displayUserIssuedBooks(filtered);
+}
+
+setupIssuedBooksAccess();

@@ -1506,60 +1506,17 @@ if (darkModeButton) {
 }
 
 
-// ================= USER-WISE ISSUED BOOKS =================
-
-// let allUserIssuedBooks = [];
-
-// async function loadUserIssuedBooks() {
-//     const table = document.getElementById(
-//         "userIssuedBooksTable"
-//     );
-
-//     if (!table) return;
-
-//     table.innerHTML = `
-//         <tr>
-//             <td colspan="8">Loading records...</td>
-//         </tr>
-//     `;
-
-//     try {
-//         const response = await fetch("/user-issued-books");
-
-//         if (!response.ok) {
-//             throw new Error("Unable to load issued-book records.");
-//         }
-
-//         allUserIssuedBooks = await response.json();
-
-//         displayUserIssuedBooks(allUserIssuedBooks);
-
-//     } catch (error) {
-//         console.error(error);
-
-//         table.innerHTML = `
-//             <tr>
-//                 <td colspan="8">
-//                     Unable to load records. Check that the server is running.
-//                 </td>
-//             </tr>
-//         `;
-//     }
-// }
-
 
 // ================= USER-WISE ISSUED BOOKS =================
+
 
 let allUserIssuedBooks = [];
 
 function setupIssuedBooksAccess() {
-    const section = document.getElementById(
-        "userIssuedBooksSection"
-    );
+    const section = document.getElementById("userIssuedBooksSection");
 
     if (!section) return;
 
-    // Admin sees all users; regular users see their own records.
     section.style.display = loggedInUser ? "block" : "none";
 
     const heading = section.querySelector("h2");
@@ -1576,69 +1533,100 @@ function setupIssuedBooksAccess() {
 }
 
 async function loadUserIssuedBooks() {
-    const table = document.getElementById(
-        "userIssuedBooksTable"
-    );
+    const table = document.getElementById("userIssuedBooksTable");
 
-    if (!table) return;
+    if (!table) {
+        console.error("Missing element: userIssuedBooksTable");
+        return;
+    }
 
     table.innerHTML =
         '<tr><td colspan="8">Loading records...</td></tr>';
 
     try {
-        const response = await fetch("/user-issued-books", {
-            credentials: "same-origin"
-        });
+        const response = await fetch(
+            "/user-issued-books",
+            {
+                method: "GET",
+                credentials: "same-origin",
+                cache: "no-store"
+            }
+        );
+
+        const result = await response.json();
 
         if (!response.ok) {
-            throw new Error("Please login again.");
+            throw new Error(
+                result.error || "Unable to load issued books."
+            );
         }
 
-        allUserIssuedBooks = await response.json();
+        if (!Array.isArray(result)) {
+            throw new Error("Invalid data received from server.");
+        }
 
+        console.log("Issued-books API response:", result);
+
+        allUserIssuedBooks = result;
         displayUserIssuedBooks(allUserIssuedBooks);
 
     } catch (error) {
-        console.error(error);
+        console.error("Load issued books error:", error);
 
-        table.innerHTML =
-            '<tr><td colspan="8">Unable to load records. Please log in again.</td></tr>';
+        table.innerHTML = "";
+
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+
+        cell.colSpan = 8;
+        cell.textContent = error.message;
+
+        row.appendChild(cell);
+        table.appendChild(row);
     }
 }
 
 function displayUserIssuedBooks(records) {
-    const table = document.getElementById(
-        "userIssuedBooksTable"
-    );
+    const table = document.getElementById("userIssuedBooksTable");
 
     if (!table) return;
 
     table.innerHTML = "";
 
-    if (!records || records.length === 0) {
-        table.innerHTML =
-            '<tr><td colspan="8">No records found.</td></tr>';
+    if (!Array.isArray(records) || records.length === 0) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+
+        cell.colSpan = 8;
+        cell.textContent = isAdmin
+            ? "No users found."
+            : "No issued books found.";
+
+        row.appendChild(cell);
+        table.appendChild(row);
         return;
     }
 
     const users = new Map();
 
-    records.forEach(function (record) {
-        if (!users.has(record.user_id)) {
-            users.set(record.user_id, {
-                user_id: record.user_id,
-                name: record.name,
+    records.forEach(function(record) {
+        const userId = record.user_id;
+
+        if (!users.has(userId)) {
+            users.set(userId, {
+                user_id: userId,
+                name: record.name || "",
                 books: []
             });
         }
 
         if (record.book_id !== null &&
             record.book_id !== undefined) {
-            users.get(record.user_id).books.push(record);
+            users.get(userId).books.push(record);
         }
     });
 
-    users.forEach(function (user) {
+    users.forEach(function(user) {
         const count = user.books.length;
 
         if (count === 0) {
@@ -1655,16 +1643,16 @@ function displayUserIssuedBooks(records) {
             return;
         }
 
-        user.books.forEach(function (book, index) {
+        user.books.forEach(function(book, index) {
             addIssuedBookRow(table, [
                 user.user_id,
                 user.name,
                 index === 0 ? count : "",
                 book.book_id,
-                book.title,
-                book.author,
-                book.issue_date,
-                book.due_date
+                book.title || "",
+                book.author || "",
+                book.issue_date || "—",
+                book.due_date || "—"
             ]);
         });
     });
@@ -1673,8 +1661,9 @@ function displayUserIssuedBooks(records) {
 function addIssuedBookRow(table, values) {
     const row = document.createElement("tr");
 
-    values.forEach(function (value) {
+    values.forEach(function(value) {
         const cell = document.createElement("td");
+
         cell.textContent =
             value === null || value === undefined || value === ""
                 ? "—"
@@ -1693,7 +1682,7 @@ function filterUserIssuedBooks() {
 
     const query = input.value.trim().toLowerCase();
 
-    const filtered = allUserIssuedBooks.filter(function (record) {
+    const filteredRecords = allUserIssuedBooks.filter(function(record) {
         return [
             record.user_id,
             record.name,
@@ -1702,15 +1691,17 @@ function filterUserIssuedBooks() {
             record.author,
             record.issue_date,
             record.due_date
-        ].some(function (value) {
+        ].some(function(value) {
             return String(value ?? "")
                 .toLowerCase()
                 .includes(query);
         });
     });
 
-    displayUserIssuedBooks(filtered);
+    displayUserIssuedBooks(filteredRecords);
 }
+
+setupIssuedBooksAccess();
 
 
 // ================= DISPLAY USER RECORDS =================

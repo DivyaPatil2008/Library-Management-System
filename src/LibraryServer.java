@@ -837,313 +837,115 @@ public class LibraryServer {
 
     // ================= ISSUE BOOK =================
 
-    // private static void issueBook(HttpExchange exchange)
-    //         throws IOException {
+    // ================= ISSUE BOOK =================
 
-    //     if (!exchange.getRequestMethod()
-    //             .equalsIgnoreCase("POST")) {
+    private static void issueBook(HttpExchange exchange)
+            throws IOException {
 
-    //         sendResponse(
-    //             exchange,
-    //             "Please use POST method.",
-    //             405
-    //         );
-
-    //         return;
-    //     }
-
-    //     Connection con = null;
-
-    //     try {
-
-    //         String body = new String(
-    //             exchange.getRequestBody().readAllBytes(),
-    //             StandardCharsets.UTF_8
-    //         );
-
-    //         String username =
-    //             getValue(body, "username");
-
-    //         String bookId =
-    //             getValue(body, "book_id");
-
-    //         int userId =
-    //             getUserId(username);
-
-    //         if (userId == -1) {
-
-    //             sendResponse(
-    //                 exchange,
-    //                 "User not found.",
-    //                 404
-    //             );
-
-    //             return;
-    //         }
-
-    //         con = DBConnection.getConnection();
-
-    //         con.setAutoCommit(false);
-
-    //         String checkBook =
-    //             "SELECT available FROM books " +
-    //             "WHERE book_id = ? FOR UPDATE";
-
-
-    //         try (
-    //             PreparedStatement pst =
-    //                 con.prepareStatement(checkBook)
-    //         ) {
-
-    //             pst.setInt(
-    //                 1,
-    //                 Integer.parseInt(bookId)
-    //             );
-
-    //             ResultSet rs =
-    //                 pst.executeQuery();
-
-    //             if (!rs.next()) {
-
-    //                 con.rollback();
-
-    //                 sendResponse(
-    //                     exchange,
-    //                     "Book not found.",
-    //                     404
-    //                 );
-
-    //                 return;
-    //             }
-
-    //             if (rs.getInt("available") == 0) {
-
-    //                 con.rollback();
-
-    //                 sendResponse(
-    //                     exchange,
-    //                     "Book is already issued.",
-    //                     400
-    //                 );
-
-    //                 return;
-    //             }
-    //         }
-
-
-    //         String insertRecord =
-    //             "INSERT INTO issue_records " +
-    //             "(book_id, user_id, issue_date, due_date, return_date, fine) " +
-    //             "VALUES (?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 7 DAY), NULL, 0.00)";
-
-
-    //         try (
-    //             PreparedStatement pst =
-    //                 con.prepareStatement(insertRecord)
-    //         ) {
-
-    //             pst.setInt(
-    //                 1,
-    //                 Integer.parseInt(bookId)
-    //             );
-
-    //             pst.setInt(2, userId);
-
-    //             pst.executeUpdate();
-    //         }
-
-
-    //         String updateBook =
-    //             "UPDATE books SET available = 0 " +
-    //             "WHERE book_id = ?";
-
-
-    //         try (
-    //             PreparedStatement pst =
-    //                 con.prepareStatement(updateBook)
-    //         ) {
-
-    //             pst.setInt(
-    //                 1,
-    //                 Integer.parseInt(bookId)
-    //             );
-
-    //             pst.executeUpdate();
-    //         }
-
-    //         con.commit();
-
-
-    //         sendResponse(
-    //             exchange,
-    //             "Book issued successfully!",
-    //             200
-    //         );
-
-    //     } catch (Exception e) {
-
-    //         e.printStackTrace();
-
-    //         try {
-    //             if (con != null) {
-    //                 con.rollback();
-    //             }
-    //         } catch (Exception ignored) {
-    //         }
-
-    //         sendResponse(
-    //             exchange,
-    //             "Unable to issue book.",
-    //             500
-    //         );
-
-    //     } finally {
-
-    //         try {
-    //             if (con != null) {
-    //                 con.close();
-    //             }
-    //         } catch (Exception ignored) {
-    //         }
-    //     }
-    // }
-
-
-        private static void issueBook(HttpExchange exchange)
-                throws IOException {
-
-    String token = null;
-
-    String cookieHeader =
-        exchange.getRequestHeaders().getFirst("Cookie");
-
-    if (cookieHeader != null) {
-        for (String cookie : cookieHeader.split(";")) {
-            String[] parts = cookie.trim().split("=", 2);
-
-            if (parts.length == 2 &&
-                parts[0].equals("LMSSESSION")) {
-                token = parts[1];
-                break;
-            }
-        }
-    }
-
-    String username =
-        token == null ? null : activeSessions.get(token);
-
-    if (username == null) {
-        sendResponse(
-            exchange,
-            "{\"error\":\"Please login again\"}",
-            401
-        );
-        return;
-    }
-
-    try {
-        boolean admin = isAdmin(username);
-        int userId = getUserId(username);
-
-        if (userId == -1) {
-            sendResponse(exchange, "{\"error\":\"User not found\"}", 401);
+        if (!exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+            sendResponse(exchange, "Please use POST method.", 405);
             return;
         }
 
-        String sql =
-            "SELECT u.user_id, u.name, b.book_id, b.title, b.author, " +
-            "ir.issue_date, ir.due_date " +
-            "FROM users u " +
-            "LEFT JOIN issue_records ir ON u.user_id = ir.user_id " +
-            "AND ir.return_date IS NULL " +
-            "LEFT JOIN books b ON ir.book_id = b.book_id " +
-            "WHERE UPPER(u.role) = 'USER' ";
+        Connection con = null;
 
-        if (!admin) {
-            sql += "AND u.user_id = ? ";
-        }
+        try {
+            String body = new String(
+                exchange.getRequestBody().readAllBytes(),
+                StandardCharsets.UTF_8
+            );
 
-        sql += "ORDER BY u.name, u.user_id, b.book_id";
+            String bookIdText = getValue(body, "book_id");
+            String username = getValue(body, "username");
 
-        try (
-            Connection con = DBConnection.getConnection();
-            PreparedStatement ps = con.prepareStatement(sql)
-        ) {
-            if (!admin) {
-                ps.setInt(1, userId);
+            if (username.isEmpty() || bookIdText.isEmpty()) {
+                sendResponse(exchange, "Please enter a valid Book ID.", 400);
+                return;
             }
 
-            try (ResultSet rs = ps.executeQuery()) {
-                StringBuilder json = new StringBuilder("[");
-                boolean first = true;
+            int bookId = Integer.parseInt(bookIdText);
+            int userId = getUserId(username);
 
-                while (rs.next()) {
-                    if (!first) json.append(",");
-                    first = false;
+            if (userId == -1) {
+                sendResponse(exchange, "User not found.", 404);
+                return;
+            }
 
-                    json.append("{")
-                        .append("\"user_id\":")
-                        .append(rs.getInt("user_id"))
-                        .append(",\"name\":\"")
-                        .append(jsonEscape(rs.getString("name")))
-                        .append("\",\"book_id\":");
+            con = DBConnection.getConnection();
+            con.setAutoCommit(false);
 
-                    int bookId = rs.getInt("book_id");
+            // Check whether the book exists and is available.
+            String checkSql =
+                "SELECT available FROM books WHERE book_id = ? FOR UPDATE";
 
-                    if (rs.wasNull()) {
-                        json.append("null");
-                    } else {
-                        json.append(bookId);
+            try (PreparedStatement ps = con.prepareStatement(checkSql)) {
+                ps.setInt(1, bookId);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (!rs.next()) {
+                        con.rollback();
+                        sendResponse(exchange, "Book not found.", 404);
+                        return;
                     }
 
-                    json.append(",\"title\":");
-                    appendJsonString(json, rs.getString("title"));
-
-                    json.append(",\"author\":");
-                    appendJsonString(json, rs.getString("author"));
-
-                    json.append(",\"issue_date\":");
-                    appendJsonString(json, rs.getString("issue_date"));
-
-                    json.append(",\"due_date\":");
-                    appendJsonString(json, rs.getString("due_date"));
-
-                    json.append("}");
+                    if (rs.getInt("available") != 1) {
+                        con.rollback();
+                        sendResponse(exchange, "Book is already issued.", 400);
+                        return;
+                    }
                 }
+            }
 
-                json.append("]");
+            // Create the issue record with a one-week due date.
+            String insertSql =
+                "INSERT INTO issue_records " +
+                "(book_id, user_id, issue_date, due_date, return_date, fine) " +
+                "VALUES (?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 7 DAY), NULL, 0.00)";
 
-                exchange.getResponseHeaders().set(
-                    "Content-Type",
-                    "application/json; charset=UTF-8"
-                );
+            try (PreparedStatement ps = con.prepareStatement(insertSql)) {
+                ps.setInt(1, bookId);
+                ps.setInt(2, userId);
+                ps.executeUpdate();
+            }
 
-                sendResponse(exchange, json.toString(), 200);
+            // Mark the book as unavailable.
+            String updateSql =
+                "UPDATE books SET available = 0 WHERE book_id = ?";
+
+            try (PreparedStatement ps = con.prepareStatement(updateSql)) {
+                ps.setInt(1, bookId);
+                ps.executeUpdate();
+            }
+
+            con.commit();
+
+            sendResponse(
+                exchange,
+                "Book issued successfully!",
+                200
+            );
+
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            try {
+                if (con != null) {
+                    con.rollback();
+                }
+            } catch (Exception ignored) {
+            }
+
+            sendResponse(exchange, "Unable to issue book.", 500);
+
+        } finally {
+            try {
+                if (con != null) {
+                    con.close();
+                }
+            } catch (Exception ignored) {
             }
         }
-
-    } catch (Exception e) {
-        e.printStackTrace();
-
-        sendResponse(
-            exchange,
-            "{\"error\":\"Unable to load issued books\"}",
-            500
-        );
     }
-}
-
-private static void appendJsonString(
-        StringBuilder json, String value) {
-
-    if (value == null) {
-        json.append("null");
-    } else {
-        json.append("\"")
-            .append(jsonEscape(value))
-            .append("\"");
-    }
-}
 
 
     // ================= RETURN BOOK =================
@@ -1706,19 +1508,20 @@ private static void appendJsonString(
 
  // ================= USER-WISE ISSUED BOOKS =================
 
+
 private static void userIssuedBooks(HttpExchange exchange)
         throws IOException {
 
     if (!exchange.getRequestMethod().equalsIgnoreCase("GET")) {
-        sendResponse(exchange,
-            "{\"error\":\"Method not allowed\"}", 405);
+        sendJsonResponse(exchange,
+                "{\"error\":\"Method not allowed\"}", 405);
         return;
     }
 
-    // Get logged-in user from session cookie
+    // Get the logged-in username from the session cookie
     String username = null;
     String cookieHeader =
-        exchange.getRequestHeaders().getFirst("Cookie");
+            exchange.getRequestHeaders().getFirst("Cookie");
 
     if (cookieHeader != null) {
         for (String cookie : cookieHeader.split(";")) {
@@ -1733,98 +1536,147 @@ private static void userIssuedBooks(HttpExchange exchange)
     }
 
     if (username == null) {
-        sendResponse(exchange,
-            "{\"error\":\"Please login again\"}", 401);
+        sendJsonResponse(exchange,
+                "{\"error\":\"Please login again\"}", 401);
         return;
     }
 
-    boolean admin;
-int userId;
+    try {
+        int userId = getUserId(username);
+        boolean admin = isAdmin(username);
 
-try {
-    admin = isAdmin(username);
-    userId = getUserId(username);
-} catch (Exception e) {
-    e.printStackTrace();
-    sendResponse(exchange,
-        "{\"error\":\"Unable to verify user\"}", 500);
-    return;
-}
-
-    if (!admin && userId <= 0) {
-        sendResponse(exchange,
-            "{\"error\":\"User not found\"}", 403);
-        return;
-    }
-
-    String sql =
-        "SELECT u.user_id, u.name, " +
-        "b.book_id, b.title, b.author, " +
-        "ir.issue_date, ir.due_date " +
-        "FROM users u " +
-        "LEFT JOIN issue_records ir " +
-        "ON u.user_id = ir.user_id " +
-        "AND ir.return_date IS NULL " +
-        "LEFT JOIN books b ON ir.book_id = b.book_id " +
-        "WHERE UPPER(u.role) = 'USER' " +
-        (admin ? "" : "AND u.user_id = ? ") +
-        "ORDER BY u.name, u.user_id, b.book_id";
-
-    try (Connection con = DBConnection.getConnection();
-         PreparedStatement ps = con.prepareStatement(sql)) {
-
-        if (!admin) {
-            ps.setInt(1, userId);
+        if (userId <= 0) {
+            sendJsonResponse(exchange,
+                    "{\"error\":\"User not found\"}", 403);
+            return;
         }
 
-        try (ResultSet rs = ps.executeQuery()) {
-            StringBuilder json = new StringBuilder("[");
-            boolean first = true;
+        String sql =
+                "SELECT u.user_id, u.name, " +
+                "b.book_id, b.title, b.author, " +
+                "ir.issue_date, ir.due_date " +
+                "FROM users u " +
+                "LEFT JOIN issue_records ir " +
+                "ON u.user_id = ir.user_id " +
+                "AND ir.return_date IS NULL " +
+                "LEFT JOIN books b ON ir.book_id = b.book_id " +
+                "WHERE UPPER(u.role) = 'USER' " +
+                (admin ? "" : "AND u.user_id = ? ") +
+                "ORDER BY u.user_id, b.book_id";
 
-            while (rs.next()) {
-                if (!first) {
-                    json.append(",");
-                }
-                first = false;
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
 
-                json.append("{")
-                    .append("\"user_id\":")
-                    .append(rs.getInt("user_id"))
-                    .append(",\"name\":\"")
-                    .append(jsonEscape(rs.getString("name")))
-                    .append("\",\"book_id\":");
-
-                int bookId = rs.getInt("book_id");
-                if (rs.wasNull()) {
-                    json.append("null");
-                } else {
-                    json.append(bookId);
-                }
-
-                json.append(",\"title\":");
-                appendJsonString(json, rs.getString("title"));
-
-                json.append(",\"author\":");
-                appendJsonString(json, rs.getString("author"));
-
-                json.append(",\"issue_date\":");
-                appendJsonString(json, rs.getString("issue_date"));
-
-                json.append(",\"due_date\":");
-                appendJsonString(json, rs.getString("due_date"));
-
-                json.append("}");
+            if (!admin) {
+                ps.setInt(1, userId);
             }
 
-            json.append("]");
-            sendResponse(exchange, json.toString(), 200);
+            try (ResultSet rs = ps.executeQuery()) {
+                StringBuilder json = new StringBuilder("[");
+                boolean first = true;
+
+                while (rs.next()) {
+                    if (!first) {
+                        json.append(",");
+                    }
+                    first = false;
+
+                    json.append("{")
+                        .append("\"user_id\":")
+                        .append(rs.getInt("user_id"))
+                        .append(",\"name\":");
+
+                    appendJsonString(json, rs.getString("name"));
+
+                    json.append(",\"book_id\":");
+
+                    int bookId = rs.getInt("book_id");
+                    if (rs.wasNull()) {
+                        json.append("null");
+                    } else {
+                        json.append(bookId);
+                    }
+
+                    json.append(",\"title\":");
+                    appendJsonString(json, rs.getString("title"));
+
+                    json.append(",\"author\":");
+                    appendJsonString(json, rs.getString("author"));
+
+                    json.append(",\"issue_date\":");
+                    appendJsonString(json,
+                            rs.getString("issue_date"));
+
+                    json.append(",\"due_date\":");
+                    appendJsonString(json,
+                            rs.getString("due_date"));
+
+                    json.append("}");
+                }
+
+                json.append("]");
+                sendJsonResponse(exchange, json.toString(), 200);
+            }
         }
 
     } catch (Exception e) {
         e.printStackTrace();
-        sendResponse(exchange,
-            "{\"error\":\"Unable to load user issued books\"}", 500);
+        sendJsonResponse(exchange,
+                "{\"error\":\"Unable to load user issued books\"}",
+                500);
     }
+}
+
+// Send a JSON response with the correct content type
+private static void sendJsonResponse(
+        HttpExchange exchange,
+        String response,
+        int status) throws IOException {
+
+    byte[] data = response.getBytes(StandardCharsets.UTF_8);
+
+    exchange.getResponseHeaders().set(
+            "Content-Type", "application/json; charset=UTF-8");
+
+    exchange.sendResponseHeaders(status, data.length);
+
+    try (OutputStream output = exchange.getResponseBody()) {
+        output.write(data);
+    }
+}
+
+
+private static void appendJsonString(StringBuilder json, String value) {
+    if (value == null) {
+        json.append("null");
+        return;
+    }
+
+    json.append("\"");
+
+    for (char c : value.toCharArray()) {
+        switch (c) {
+            case '"':
+                json.append("\\\"");
+                break;
+            case '\\':
+                json.append("\\\\");
+                break;
+            case '\n':
+                json.append("\\n");
+                break;
+            case '\r':
+                json.append("\\r");
+                break;
+            case '\t':
+                json.append("\\t");
+                break;
+            default:
+                json.append(c);
+        }
+    }
+
+    json.append("\"");
 }
 
 }
